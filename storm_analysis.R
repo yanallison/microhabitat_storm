@@ -387,13 +387,13 @@ loadings_pre$yend <- loadings_pre$PC2 * arrow_scale_pre
 
 #scaling labels to make them a good distance from arrow
 loadings_pre$label_scale <- 1  
-loadings_pre$label_scale[loadings_pre$trait == "H:WW"] <- 1.25
+loadings_pre$label_scale[loadings_pre$trait == "H:WW"] <- 1.15
 loadings_pre$label_scale[loadings_pre$trait == "H:V"]  <- 1.15
 loadings_pre$label_scale[loadings_pre$trait == "% Calc"] <- 1.35
-loadings_pre$label_scale[loadings_pre$trait == "DW:WW"] <- 1.4
-loadings_pre$label_scale[loadings_pre$trait == "SA:V"] <- 1.35
+loadings_pre$label_scale[loadings_pre$trait == "DW:WW"] <- 1.3
+loadings_pre$label_scale[loadings_pre$trait == "SA:V"] <- 1.25
 loadings_pre$label_scale[loadings_pre$trait == "T"] <- 1.15
-loadings_pre$label_scale[loadings_pre$trait == "SA:DW"] <- 1.25
+loadings_pre$label_scale[loadings_pre$trait == "SA:DW"] <- 1.2
 loadings_pre$label_scale[loadings_pre$trait == "TS"] <- 1.75
 loadings_pre$label_scale[loadings_pre$trait == "H"] <- 1.1
 
@@ -402,13 +402,25 @@ loadings_pre$label_x <- loadings_pre$xend * loadings_pre$label_scale
 loadings_pre$label_y <- loadings_pre$yend * loadings_pre$label_scale
 
 # Calculate mean trait value for each sample
-pre_scores_id$mean_trait <- rowMeans(prestorm_data[, 5:13], na.rm = TRUE)
+centroids_pre <- pre_scores_id %>%
+  group_by(treatbysite) %>%
+  summarize(
+    mean_PC1 = mean(PC1),
+    mean_PC2 = mean(PC2)
+  )
 
 #prestorm pca plot
 ggplot(pre_scores_id, aes(x = PC1, y = PC2, color = treatbysite, fill = treatbysite)) +
   geom_hline(yintercept = 0, color = "gray70", linewidth = 0.5) +
   geom_vline(xintercept = 0, color = "gray70", linewidth = 0.5)+
-  geom_point(aes(size = mean_trait)) +  # map size only for points
+  geom_point() +
+  geom_point(
+    data = centroids_pre,
+    aes(x = mean_PC1, y = mean_PC2, color = treatbysite),
+    size = 4,        # large
+    shape = 16,      # solid circle
+    inherit.aes = FALSE
+  )+
   stat_ellipse(aes(color = treatbysite), level = 0.50, #50% confidence interval 
                geom = "polygon",  # Shading the ellipses
                alpha = 0.3) +  # Transparency for ellipses
@@ -435,7 +447,7 @@ ggplot(pre_scores_id, aes(x = PC1, y = PC2, color = treatbysite, fill = treatbys
   ) +
   scale_x_continuous(expand = expansion(mult = 0.1)) +
   scale_y_continuous(expand = expansion(mult = 0.1)) +
-  scale_color_manual(values = c("Pre-Storm Sand Flat" = "#ba57ff", #made all prestorm outlines dark for the prestorm only
+  scale_color_manual(name = "Key", values = c("Pre-Storm Sand Flat" = "#ba57ff", #made all prestorm outlines dark for the prestorm only
                                 "Pre-Storm Reef Flat" = "#69a400",
                                 "Pre-Storm Reef Crest" = "#f55d56",
                                 "Pre-Storm Reef Base" = "#00b3b8",
@@ -443,7 +455,7 @@ ggplot(pre_scores_id, aes(x = PC1, y = PC2, color = treatbysite, fill = treatbys
                                 "Post-Storm Reef Flat" = "#69a400",
                                 "Post-Storm Reef Crest" = "#f55d56",
                                 "Post-Storm Reef Base" = "#00b3b8")) +  # Custom color palette
-  scale_fill_manual(values = c("Pre-Storm Sand Flat" = "#d8bdea",
+  scale_fill_manual(name = "Key", values = c("Pre-Storm Sand Flat" = "#d8bdea",
                                "Pre-Storm Reef Flat" = "#c1ea76",
                                "Pre-Storm Reef Crest" = "#f3c8c3",
                                "Pre-Storm Reef Base" = "#a1e5e8",
