@@ -501,11 +501,12 @@ mtext("Trait", side = 1, line = 4.5)
 mtext("PC2 (% contribution)", side = 2, line = 2.3) 
 abline(h = null_contribution, lty = 2, col = "red")
 
-####Bar Plots####
+####Bar Graphs####
 #clean up titles/reorder Factors
 micro_data$microhabitat_f <- factor(micro_data$microhabitat,
                                     levels = c("sandflat", "reefflat", "reefcrest", "reefslope"),
                                     labels = c("Sand Flat", "Reef Flat", "Reef Crest", "Reef Base"))
+#Function to make bar graphs
 micro_barplot <- function(data, yvar, color1, color2, yylab, show_legend = TRUE) {
   
   # Summarize: mean, SD, count, standard error
@@ -541,11 +542,89 @@ micro_barplot <- function(data, yvar, color1, color2, yylab, show_legend = TRUE)
   return(Micro_Plot)
 }
 
-hv_bar1 <- micro_barplot(data=micro_data, yvar = 'H:V', color2="#1B9E77", color1 = "#56B4E9", 
-                         yylab = "Height to Volume", show_legend = FALSE)
-hv_bar1
-
-tough <- micro_barplot(data=micro_data, yvar = 'T', color2="#1B9E77", color1 = "#56B4E9", 
+#Bar Graphs for Each Trait
+tough_bar <- micro_barplot(data=micro_data, yvar = 'T', color2="#1B9E77", color1 = "#56B4E9", 
                          yylab = "Toughness", show_legend = FALSE)
-tough
+tough_bar
+
+p_calc_bar <- micro_barplot(data=micro_data, yvar = '% Calc', color2="#1B9E77", color1 = "#56B4E9", 
+                       yylab = "Percent Calcification (%)", show_legend = FALSE)
+p_calc_bar
+
+dw_ww_bar <- micro_barplot(data=micro_data, yvar = 'DW:WW', color2="#1B9E77", color1 = "#56B4E9", 
+                           yylab = "Dry Weight to Wet Weight", show_legend = FALSE)
+dw_ww_bar
+
+tensile_bar <- micro_barplot(data=micro_data, yvar = 'TS', color2="#1B9E77", color1 = "#56B4E9", 
+                          yylab = "Tensile Strength", show_legend = FALSE)
+tensile_bar
+
+height_bar <- micro_barplot(data=micro_data, yvar = 'H', color2="#1B9E77", color1 = "#56B4E9", 
+                             yylab = "Height", show_legend = FALSE)
+height_bar
+
+hv_bar <- micro_barplot(data=micro_data, yvar = 'H:V', color2="#1B9E77", color1 = "#56B4E9", 
+                            yylab = "Height to Volume", show_legend = FALSE)
+hv_bar
+
+h_ww_bar <- micro_barplot(data=micro_data, yvar = 'H:WW', color2="#1B9E77", color1 = "#56B4E9", 
+                            yylab = "Height to Wet Weight", show_legend = FALSE)
+h_ww_bar
+
+sa_v_bar <- micro_barplot(data=micro_data, yvar = 'SA:V', color2="#1B9E77", color1 = "#56B4E9", 
+                          yylab = "Surface Area to Volume", show_legend = FALSE)
+sa_v_bar
+
+sa_dw_bar <- micro_barplot(data=micro_data, yvar = 'SA:DW', color2="#1B9E77", color1 = "#56B4E9", 
+                          yylab = "Surface Area to Dry Weight", show_legend = FALSE)
+sa_dw_bar
+
+####Univariate Trait Analysis####
+
+#Toughness
+tough_aov <- aov(T ~ microhabitat * treatment, data = micro_data)
+shapiro.test(residuals(tough_aov)) #tests normality
+leveneTest(T ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+
+#% Calcification
+p_calc_aov <- aov(`% Calc` ~ microhabitat * treatment, data = micro_data)
+shapiro.test(residuals(p_calc_aov)) #tests normality
+leveneTest(`% Calc` ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+summary(p_calc_aov)
+
+#DW:WW
+dw_ww_aov <- aov(`DW:WW` ~ microhabitat * treatment, data = micro_data)
+shapiro.test(residuals(dw_ww_aov)) #tests normality
+leveneTest(`DW:WW` ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+
+#Tensile Strength
+ts_aov <- aov(TS ~ microhabitat * treatment, data = micro_data)
+shapiro.test(residuals(ts_aov)) #tests normality
+leveneTest(TS ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+
+#Height
+h_aov <- aov(H ~ microhabitat * treatment, data = micro_data)
+shapiro.test(residuals(h_aov)) #tests normality
+leveneTest(H ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+
+#H:V
+h_v_aov <- aov(`H:V` ~ microhabitat * treatment, data = micro_data)
+shapiro.test(residuals(h_v_aov)) #tests normality
+leveneTest(`H:V` ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+
+#H:WW
+h_ww_aov <- aov(`H:WW` ~ microhabitat * treatment, data = micro_data)
+shapiro.test(residuals(h_ww_aov)) #tests normality
+leveneTest(`H:WW` ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+
+#SA:V
+sa_v_aov <- aov(`SA:V` ~ microhabitat * treatment, data = micro_data)
+shapiro.test(residuals(sa_v_aov)) #tests normality
+leveneTest(`SA:V` ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+
+#SA:DW
+sa_dw_aov <- aov(`SA:DW` ~ microhabitat * treatment, data = micro_data)
+shapiro.test(residuals(sa_dw_aov)) #tests normality
+leveneTest(`SA:DW` ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+
 
