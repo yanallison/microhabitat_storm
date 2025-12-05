@@ -1,4 +1,4 @@
-#Updated Script as of 11/20/25
+#Updated Script as of 11/25/25
 #need micro_storm_data.csv to be located within the same project, in a folder called 'data'
 
 ####Set Up####
@@ -63,20 +63,21 @@ micro_data<- micro_data %>%
   )
 
 ####Full Storm PERMANOVA####
-# Create trait matrix
-traits.mat <- as.matrix(micro_data[, 5:13]) 
+# Create trait matrix 
+traits.mat <- as.matrix(micro_data[, 5:13])
 
-# Calculate Bray-Curtis dissimilarity
+# Calculate Bray-Curtis dissimilarity 
 traits.dist <- vegdist(traits.mat, method = "bray")
 
-# Run PERMANOVA with main effects and interaction
-set.seed(36)
-traits.div <- adonis2(traits.dist ~ microhabitat * treatment,
-                      data = micro_data,
-                      permutations = 999,
-                      method = "bray")
+# Run PERMANOVA with main effects and interaction 
+set.seed(36) 
+traits.div <- adonis2(traits.dist ~ microhabitat * treatment, 
+                      data = micro_data, 
+                      permutations = 999, 
+                      # by = "margin",
+                      method = "bray") # View results traits.div
 
-# View results
+# View results 
 traits.div
 
 ####Full Storm PCA####
@@ -640,3 +641,6 @@ shapiro.test(residuals(sa_dw_aov)) #tests normality
 leveneTest(`SA:DW` ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
 
 
+
+####Supplemental####
+#PCA for PC 3 and 4
