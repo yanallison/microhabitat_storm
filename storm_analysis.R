@@ -1,4 +1,4 @@
-#Updated Script as of 11/25/25
+#Updated Script as of 1/15/25
 #need micro_storm_data.csv to be located within the same project, in a folder called 'data'
 
 ####Set Up####
@@ -19,6 +19,7 @@ library("lmPerm")
 library(ggrepel)
 library(tibble)
 library(patchwork)
+library(emmeans)
 
 #reading data from .csv file
 micro_data <- read_csv("data/micro_storm_data.csv") #micro_data = full storm dataset
@@ -63,6 +64,10 @@ micro_data<- micro_data %>%
   )
 
 ####Full Storm PERMANOVA####
+#As factor
+micro_data$microhabitat <- as.factor(micro_data$microhabitat)
+micro_data$treatment    <- as.factor(micro_data$treatment)
+
 # Create trait matrix 
 traits.mat <- as.matrix(micro_data[, 5:13])
 
@@ -71,13 +76,12 @@ traits.dist <- vegdist(traits.mat, method = "bray")
 
 # Run PERMANOVA with main effects and interaction 
 set.seed(36) 
-traits.div <- adonis2(traits.dist ~ microhabitat * treatment, 
-                      data = micro_data, 
-                      permutations = 999, 
-                      # by = "margin",
-                      method = "bray") # View results traits.div
-
-# View results 
+traits.div <- adonis2(
+  traits.dist ~ microhabitat * treatment,
+  data = micro_data,
+  permutations = 999,
+  by = "terms"
+)
 traits.div
 
 ####Full Storm PCA####
@@ -595,9 +599,27 @@ sa_dw_bar
 ####Univariate Trait Analysis####
 
 #Toughness
-tough_aov <- aov(T ~ microhabitat * treatment, data = micro_data)
+#trying transformations
+micro_data$T_log <- log(micro_data$T)
+micro_data$T_log10 <- log10(micro_data$T)
+#tests
+tough_aov <- aov(T_log10 ~ microhabitat * treatment, data = micro_data)
 shapiro.test(residuals(tough_aov)) #tests normality
-leveneTest(T ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+leveneTest(T_log10 ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+#transformations failed so using a GLM with a gamma distribution
+T_glm <- glm(T ~ treatment * microhabitat,
+             data = micro_data,
+             family = Gamma(link="log")
+             )
+summary(T_glm)
+anova(T_glm, test = "Chisq")
+#significant interaction effect, so doing Tukey's contrast as post-hoc
+T_tukey <- emmeans(
+  T_glm,
+  ~ treatment * microhabitat,
+  type = "response"
+)
+pairs(T_tukey, adjust = "tukey")
 
 #% Calcification
 p_calc_aov <- aov(`% Calc` ~ microhabitat * treatment, data = micro_data)
@@ -606,40 +628,97 @@ leveneTest(`% Calc` ~ microhabitat * treatment, data = micro_data) #tests homoge
 summary(p_calc_aov)
 
 #DW:WW
-dw_ww_aov <- aov(`DW:WW` ~ microhabitat * treatment, data = micro_data)
+#trying transformations
+micro_data$dwww_log <- log(micro_data$`DW:WW`)
+micro_data$dwww_log10 <- log10(micro_data$`DW:WW`)
+micro_data$dwww_arcsinsqr <- asin(sqrt(micro_data$`DW:WW`))
+#tests
+dw_ww_aov <- aov(dwww_arcsinsqr ~ microhabitat * treatment, data = micro_data)
 shapiro.test(residuals(dw_ww_aov)) #tests normality
-leveneTest(`DW:WW` ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+leveneTest(dwww_arcsinsqr ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+#transformations failed so using a GLM with a gamma distribution
+dwww_glm <- glm(`DW:WW` ~ treatment * microhabitat,
+             data = micro_data,
+             family = Gamma(link="log")
+)
+summary(dwww_glm)
+anova(dwww_glm, test = "Chisq")
 
 #Tensile Strength
-ts_aov <- aov(TS ~ microhabitat * treatment, data = micro_data)
+#trying transformations
+micro_data$TS_log <- log(micro_data$TS)
+micro_data$TS_log10 <- log10(micro_data$TS)
+micro_data$TS_sqrt <- sqrt(micro_data$TS)
+#tests
+ts_aov <- aov(TS_sqrt ~ microhabitat * treatment, data = micro_data)
 shapiro.test(residuals(ts_aov)) #tests normality
-leveneTest(TS ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+leveneTest(TS_sqrt ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+summary(ts_aov)
 
 #Height
-h_aov <- aov(H ~ microhabitat * treatment, data = micro_data)
+#trying transformations
+micro_data$H_log <- log(micro_data$H)
+#tests
+h_aov <- aov(H_log ~ microhabitat * treatment, data = micro_data)
 shapiro.test(residuals(h_aov)) #tests normality
-leveneTest(H ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+leveneTest(H_log ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+summary(h_aov)
 
 #H:V
-h_v_aov <- aov(`H:V` ~ microhabitat * treatment, data = micro_data)
+#trying transformations
+micro_data$HV_log <- log(micro_data$`H:V`)
+#tests
+h_v_aov <- aov(HV_log ~ microhabitat * treatment, data = micro_data)
 shapiro.test(residuals(h_v_aov)) #tests normality
-leveneTest(`H:V` ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+leveneTest(HV_log ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+summary(h_v_aov)
 
 #H:WW
-h_ww_aov <- aov(`H:WW` ~ microhabitat * treatment, data = micro_data)
+#trying transformations
+micro_data$HWW_log <- log(micro_data$`H:WW`)
+#tests
+h_ww_aov <- aov(HWW_log ~ microhabitat * treatment, data = micro_data)
 shapiro.test(residuals(h_ww_aov)) #tests normality
-leveneTest(`H:WW` ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+leveneTest(HWW_log ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+summary(h_ww_aov)
 
 #SA:V
 sa_v_aov <- aov(`SA:V` ~ microhabitat * treatment, data = micro_data)
 shapiro.test(residuals(sa_v_aov)) #tests normality
 leveneTest(`SA:V` ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
+#transformations failed so using a GLM with a gamma distribution
+sav_glm <- glm(`SA:V` ~ treatment * microhabitat,
+                data = micro_data,
+                family = Gamma(link="log")
+)
+summary(sav_glm)
+anova(sav_glm, test = "Chisq")
+#significant interaction effect, so doing Tukey's contrast as post-hoc
+sav_tukey <- emmeans(
+  sav_glm,
+  ~ treatment * microhabitat,
+  type = "response"
+)
+pairs(sav_tukey, adjust = "tukey")
 
 #SA:DW
 sa_dw_aov <- aov(`SA:DW` ~ microhabitat * treatment, data = micro_data)
 shapiro.test(residuals(sa_dw_aov)) #tests normality
 leveneTest(`SA:DW` ~ microhabitat * treatment, data = micro_data) #tests homogeneity of variance
-
+#transformations failed so using a GLM with a gamma distribution
+sadw_glm <- glm(`SA:DW` ~ treatment * microhabitat,
+               data = micro_data,
+               family = Gamma(link="log")
+)
+summary(sadw_glm)
+anova(sadw_glm, test = "Chisq")
+#significant interaction effect, so doing Tukey's contrast as post-hoc
+sadw_tukey <- emmeans(
+  sadw_glm,
+  ~ treatment * microhabitat,
+  type = "response"
+)
+pairs(sadw_tukey, adjust = "tukey")
 
 
 ####Supplemental####
