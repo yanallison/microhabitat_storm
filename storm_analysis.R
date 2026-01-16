@@ -162,6 +162,7 @@ ggplot(pca_scores_with_id, aes(x = PC1, y = PC2, color = treatbysite, fill = tre
   # geom_point(size = 1.25) +  # Points for each sample
   geom_text_repel(size = 3, show.legend = FALSE) +
   stat_ellipse(aes(color = treatbysite), level = 0.5, #50% confidence interval 
+               type = "norm",
                geom = "polygon",  # Shading the ellipses
                alpha = 0.3) +  # Transparency for ellipses
   # Arrows from origin
@@ -216,6 +217,7 @@ create_pca_plot <- function(data, highlight_groups, color_values, title) {
     geom_point(size = 1.25) +  # Points for each sample
     stat_ellipse(data = data %>% filter(treatbysite %in% highlight_groups), 
                  aes(color = treatbysite), level = 0.5, #50% confidence interval 
+                 type = "norm",
                  geom = "polygon",  # Shading the ellipses
                  alpha = 0.3) +  # Transparency for ellipses
     # Arrows from origin
@@ -282,11 +284,13 @@ rfpca
 highlight_rb <- c("Pre-Storm Reef Base", "Post-Storm Reef Base")
 rbpca<-create_pca_plot(pca_scores_with_id, highlight_rb, color_values, 
                        NULL)
+rbpca
 
 #Sand Flat
 highlight_sf <- c("Pre-Storm Sand Flat", "Post-Storm Sand Flat")
 sfpca<- create_pca_plot(pca_scores_with_id, highlight_sf, color_values, 
                         NULL)
+sfpca
 
 pca_gridded <- (rcpca | rfpca) /
   (rbpca | sfpca)
@@ -407,7 +411,7 @@ loadings_pre$label_x <- loadings_pre$xend * loadings_pre$label_scale
 loadings_pre$label_y <- loadings_pre$yend * loadings_pre$label_scale
 
 # Calculate mean trait value for each sample
-centroids_pre <- pre_scores_id %>%
+mtv_pre <- pre_scores_id %>%
   group_by(treatbysite) %>%
   summarize(
     mean_PC1 = mean(PC1),
@@ -416,19 +420,20 @@ centroids_pre <- pre_scores_id %>%
 
 #prestorm pca plot
 ggplot(pre_scores_id, aes(x = PC1, y = PC2, color = treatbysite, fill = treatbysite)) +
-  geom_hline(yintercept = 0, color = "gray70", linewidth = 0.5) +
-  geom_vline(xintercept = 0, color = "gray70", linewidth = 0.5)+
-  geom_point() +
-  geom_point(
-    data = centroids_pre,
-    aes(x = mean_PC1, y = mean_PC2, color = treatbysite),
-    size = 4,        # large
-    shape = 16,      # solid circle
-    inherit.aes = FALSE
-  )+
+  geom_hline(yintercept = 0, color = "gray70", linewidth = 0.5) + #x axis
+  geom_vline(xintercept = 0, color = "gray70", linewidth = 0.5)+ #y axis
+  geom_point() + #plotting points on PC1 vs PC2
   stat_ellipse(aes(color = treatbysite), level = 0.50, #50% confidence interval 
+               type = "norm",
                geom = "polygon",  # Shading the ellipses
                alpha = 0.3) +  # Transparency for ellipses
+  geom_point( #plotting mean trait value as central larger point
+    data = mtv_pre,
+    aes(x = mean_PC1, y = mean_PC2, color = treatbysite),
+    size = 3,        # larger
+    shape = 16,      # solid circle
+    inherit.aes = FALSE
+  ) +
   # Arrows from origin showing trait contribution (override aesthetics)
   geom_segment(data = loadings_pre,
                aes(x = 0, y = 0, xend = PC1 * arrow_scale_pre, yend = PC2 * arrow_scale_pre),
@@ -455,19 +460,11 @@ ggplot(pre_scores_id, aes(x = PC1, y = PC2, color = treatbysite, fill = treatbys
   scale_color_manual(name = "Key", values = c("Pre-Storm Sand Flat" = "#ba57ff", #made all prestorm outlines dark for the prestorm only
                                 "Pre-Storm Reef Flat" = "#69a400",
                                 "Pre-Storm Reef Crest" = "#f55d56",
-                                "Pre-Storm Reef Base" = "#00b3b8",
-                                "Post-Storm Sand Flat" = "#ba57ff",
-                                "Post-Storm Reef Flat" = "#69a400",
-                                "Post-Storm Reef Crest" = "#f55d56",
-                                "Post-Storm Reef Base" = "#00b3b8")) +  # Custom color palette
+                                "Pre-Storm Reef Base" = "#00b3b8")) +  # Custom color palette
   scale_fill_manual(name = "Key", values = c("Pre-Storm Sand Flat" = "#d8bdea",
                                "Pre-Storm Reef Flat" = "#c1ea76",
                                "Pre-Storm Reef Crest" = "#f3c8c3",
-                               "Pre-Storm Reef Base" = "#a1e5e8",
-                               "Post-Storm Sand Flat" = "#ba57ff",
-                               "Post-Storm Reef Flat" = "#69a400",
-                               "Post-Storm Reef Crest" = "#f55d56",
-                               "Post-Storm Reef Base" = "#00b3b8"))  
+                               "Pre-Storm Reef Base" = "#a1e5e8")) 
 
 ####% Contributions for Just Pre- Storm####
 loadings_pre_abs <- loadings_pre %>%
@@ -600,7 +597,7 @@ sa_dw_bar
 
 #Toughness
 #trying transformations
-micro_data$T_log <- log(micro_data$T)
+micro_data$T_log <- log(micro_data$T) 
 micro_data$T_log10 <- log10(micro_data$T)
 #tests
 tough_aov <- aov(T_log10 ~ microhabitat * treatment, data = micro_data)
