@@ -40,14 +40,14 @@ micro_data<- micro_data %>%
       TRUE ~ treatbysite
     ),
     levels = c( #ordering factors
-      "Pre-Storm Reef Crest",
-      "Pre-Storm Reef Flat",
-      "Pre-Storm Reef Base", 
       "Pre-Storm Sand Flat",
-      "Post-Storm Reef Crest",
+      "Pre-Storm Reef Flat",
+      "Pre-Storm Reef Crest",
+      "Pre-Storm Reef Base", 
+      "Post-Storm Sand Flat",
       "Post-Storm Reef Flat",
-      "Post-Storm Reef Base",
-      "Post-Storm Sand Flat"
+      "Post-Storm Reef Crest",
+      "Post-Storm Reef Base"
     )
   )
   ) %>%
@@ -159,7 +159,7 @@ loadings$label_y[loadings$trait == "T"]    <- loadings$label_y[loadings$trait ==
 ggplot(pca_scores_with_id, aes(x = PC1, y = PC2, color = treatbysite, fill = treatbysite, label=id)) +
   geom_hline(yintercept = 0, color = "gray70", linewidth = 0.5) +
   geom_vline(xintercept = 0, color = "gray70", linewidth = 0.5)+
-  # geom_point(size = 1.25) +  # Points for each sample
+  geom_point(size = 1.25) +  # Points for each sample
   geom_text_repel(size = 3, show.legend = FALSE) +
   stat_ellipse(aes(color = treatbysite), level = 0.5, #50% confidence interval 
                type = "norm",
@@ -292,8 +292,8 @@ sfpca<- create_pca_plot(pca_scores_with_id, highlight_sf, color_values,
                         NULL)
 sfpca
 
-pca_gridded <- (rcpca | rfpca) /
-  (rbpca | sfpca)
+pca_gridded <- (sfpca | rfpca) /
+  (rcpca | rbpca)
 pca_gridded
 
 ####% Trait Contributions for Full Storm####
