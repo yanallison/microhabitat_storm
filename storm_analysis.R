@@ -1,4 +1,4 @@
-#Updated Script as of 1/15/25
+#Updated Script as of 2/26/26
 #need micro_storm_data.csv to be located within the same project, in a folder called 'data'
 
 ####Set Up####
@@ -20,6 +20,7 @@ library(ggrepel)
 library(tibble)
 library(patchwork)
 library(emmeans)
+library(cowplot)
 
 #reading data from .csv file
 micro_data <- read_csv("data/micro_storm_data.csv") #micro_data = full storm dataset
@@ -189,9 +190,10 @@ ggplot(pca_scores_with_id, aes(x = PC1, y = PC2, color = treatbysite, fill = tre
   theme_minimal() +
   theme(
     panel.grid.major = element_blank(),  # Remove major gridlines
-    panel.grid.minor = element_blank()   # Remove minor gridlines
+    panel.grid.minor = element_blank(),   # Remove minor gridlines
+    legend.text = element_text(size = 1)  # Change legend labels size and color
   ) +
-  scale_color_manual(values = c("Pre-Storm Sand Flat" = "#d8bdea",
+  scale_color_manual(name = NULL, values = c("Pre-Storm Sand Flat" = "#d8bdea",
                                 "Pre-Storm Reef Flat" = "#c1ea76",
                                 "Pre-Storm Reef Crest" = "#f3c8c3",
                                 "Pre-Storm Reef Base" = "#a1e5e8",
@@ -199,7 +201,7 @@ ggplot(pca_scores_with_id, aes(x = PC1, y = PC2, color = treatbysite, fill = tre
                                 "Post-Storm Reef Flat" = "#69a400",
                                 "Post-Storm Reef Crest" = "#f55d56",
                                 "Post-Storm Reef Base" = "#00b3b8")) +  # Custom color palette
-  scale_fill_manual(values = c("Pre-Storm Sand Flat" = "#d8bdea",
+  scale_fill_manual(name = NULL, values = c("Pre-Storm Sand Flat" = "#d8bdea",
                                "Pre-Storm Reef Flat" = "#c1ea76",
                                "Pre-Storm Reef Crest" = "#f3c8c3",
                                "Pre-Storm Reef Base" = "#a1e5e8",
@@ -396,13 +398,13 @@ loadings_pre$yend <- loadings_pre$PC2 * arrow_scale_pre
 
 #scaling labels to make them a good distance from arrow
 loadings_pre$label_scale <- 1  
-loadings_pre$label_scale[loadings_pre$trait == "H:WW"] <- 1.15
+loadings_pre$label_scale[loadings_pre$trait == "H:WW"] <- 1.2
 loadings_pre$label_scale[loadings_pre$trait == "H:V"]  <- 1.15
 loadings_pre$label_scale[loadings_pre$trait == "% Calc"] <- 1.35
-loadings_pre$label_scale[loadings_pre$trait == "DW:WW"] <- 1.3
+loadings_pre$label_scale[loadings_pre$trait == "DW:WW"] <- 1.37
 loadings_pre$label_scale[loadings_pre$trait == "SA:V"] <- 1.25
 loadings_pre$label_scale[loadings_pre$trait == "T"] <- 1.15
-loadings_pre$label_scale[loadings_pre$trait == "SA:DW"] <- 1.2
+loadings_pre$label_scale[loadings_pre$trait == "SA:DW"] <- 1.25
 loadings_pre$label_scale[loadings_pre$trait == "TS"] <- 1.75
 loadings_pre$label_scale[loadings_pre$trait == "H"] <- 1.1
 
@@ -446,7 +448,7 @@ ggplot(pre_scores_id, aes(x = PC1, y = PC2, color = treatbysite, fill = treatbys
     color = "black",
     hjust = 0.5,
     vjust = 0.5,
-    size = 4,
+    size = 6,
     inherit.aes = FALSE
   ) +
   labs(title = NULL, x = "PC1 (23.9%)", y = "PC2 (21.1%)") +
@@ -457,11 +459,11 @@ ggplot(pre_scores_id, aes(x = PC1, y = PC2, color = treatbysite, fill = treatbys
   ) +
   scale_x_continuous(expand = expansion(mult = 0.1)) +
   scale_y_continuous(expand = expansion(mult = 0.1)) +
-  scale_color_manual(name = "Key", values = c("Pre-Storm Sand Flat" = "#ba57ff", #made all prestorm outlines dark for the prestorm only
+  scale_color_manual(name = NULL, values = c("Pre-Storm Sand Flat" = "#ba57ff", #made all prestorm outlines dark for the prestorm only
                                 "Pre-Storm Reef Flat" = "#69a400",
                                 "Pre-Storm Reef Crest" = "#f55d56",
                                 "Pre-Storm Reef Base" = "#00b3b8")) +  # Custom color palette
-  scale_fill_manual(name = "Key", values = c("Pre-Storm Sand Flat" = "#d8bdea",
+  scale_fill_manual(name = NULL, values = c("Pre-Storm Sand Flat" = "#d8bdea",
                                "Pre-Storm Reef Flat" = "#c1ea76",
                                "Pre-Storm Reef Crest" = "#f3c8c3",
                                "Pre-Storm Reef Base" = "#a1e5e8")) 
@@ -525,7 +527,7 @@ micro_barplot <- function(data, yvar, color1, color2, yylab, show_legend = TRUE)
   
   # Summarize: mean, SD, count, standard error
   micro_summary_stats <- data %>%
-    group_by(microhabitat, treatment) %>%
+    group_by(microhabitat, treatment, treatbysite) %>%
     summarize(across(all_of(yvar), list(mean = mean, sd = sd, count = length), .names = "{col}_{fn}"),
               .groups = "drop") %>%
     mutate(
@@ -539,9 +541,8 @@ micro_barplot <- function(data, yvar, color1, color2, yylab, show_legend = TRUE)
   Micro_Plot <- ggplot(micro_summary_stats,
                        aes(x = factor(microhabitat, levels = c('sandflat', 'reefflat', 'reefcrest', 'reefslope')),
                            y = mean,
-                           fill = fct_rev(treatment),
-                           color = fct_rev(treatment))) +
-    geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) + 
+                           fill = treatbysite)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7, color = "black") + 
     geom_errorbar(aes(ymin = mean - st_error, ymax = mean + st_error),
                   color = "black", position = position_dodge(width = 0.8), width = 0.2) +
     theme_classic() +
@@ -549,49 +550,74 @@ micro_barplot <- function(data, yvar, color1, color2, yylab, show_legend = TRUE)
           legend.position = ifelse(show_legend, "right", "none")) +
     xlab("Microhabitat") + 
     ylab(yylab) +
-    scale_fill_manual(values = c(color1, color2), labels = c("Pre Storm", "Post Storm")) + 
-    scale_color_manual(values = c(color1, color2), labels = c("Pre Storm", "Post Storm")) + 
+    theme(axis.text.x = element_text(size = 14),
+          axis.text.y = element_text(size = 14),
+          axis.title.x = element_text(size = 16),
+          axis.title.y = element_text(size = 16))+
+    scale_y_continuous(expand = expansion(mult = c(0, 0.05))) + #remove padding between bars & axes
+    scale_fill_manual(values = c("Pre-Storm Sand Flat" = "#d8bdea",
+                                 "Pre-Storm Reef Flat" = "#c1ea76",
+                                 "Pre-Storm Reef Crest" = "#f3c8c3",
+                                 "Pre-Storm Reef Base" = "#a1e5e8",
+                                 "Post-Storm Sand Flat" = "#ba57ff",
+                                 "Post-Storm Reef Flat" = "#69a400",
+                                 "Post-Storm Reef Crest" = "#f55d56",
+                                 "Post-Storm Reef Base" = "#00b3b8")) +
     scale_x_discrete(labels = c("Sand Flat", "Reef Flat", "Reef Crest", "Reef Slope"))
-  
+ 
   return(Micro_Plot)
 }
 
 #Bar Graphs for Each Trait
-tough_bar <- micro_barplot(data=micro_data, yvar = 'T', color2="#1B9E77", color1 = "#56B4E9", 
+tough_bar <- micro_barplot(data=micro_data, yvar = 'T', 
                          yylab = "Toughness", show_legend = FALSE)
 tough_bar
 
-p_calc_bar <- micro_barplot(data=micro_data, yvar = '% Calc', color2="#1B9E77", color1 = "#56B4E9", 
+p_calc_bar <- micro_barplot(data=micro_data, yvar = '% Calc', 
                        yylab = "Percent Calcification (%)", show_legend = FALSE)
 p_calc_bar
 
-dw_ww_bar <- micro_barplot(data=micro_data, yvar = 'DW:WW', color2="#1B9E77", color1 = "#56B4E9", 
+dw_ww_bar <- micro_barplot(data=micro_data, yvar = 'DW:WW', 
                            yylab = "Dry Weight to Wet Weight", show_legend = FALSE)
 dw_ww_bar
 
-tensile_bar <- micro_barplot(data=micro_data, yvar = 'TS', color2="#1B9E77", color1 = "#56B4E9", 
+tensile_bar <- micro_barplot(data=micro_data, yvar = 'TS', 
                           yylab = "Tensile Strength", show_legend = FALSE)
 tensile_bar
 
-height_bar <- micro_barplot(data=micro_data, yvar = 'H', color2="#1B9E77", color1 = "#56B4E9", 
+height_bar <- micro_barplot(data=micro_data, yvar = 'H', 
                              yylab = "Height", show_legend = FALSE)
 height_bar
 
-hv_bar <- micro_barplot(data=micro_data, yvar = 'H:V', color2="#1B9E77", color1 = "#56B4E9", 
+hv_bar <- micro_barplot(data=micro_data, yvar = 'H:V', 
                             yylab = "Height to Volume", show_legend = FALSE)
 hv_bar
 
-h_ww_bar <- micro_barplot(data=micro_data, yvar = 'H:WW', color2="#1B9E77", color1 = "#56B4E9", 
+h_ww_bar <- micro_barplot(data=micro_data, yvar = 'H:WW', 
                             yylab = "Height to Wet Weight", show_legend = FALSE)
 h_ww_bar
 
-sa_v_bar <- micro_barplot(data=micro_data, yvar = 'SA:V', color2="#1B9E77", color1 = "#56B4E9", 
+sa_v_bar <- micro_barplot(data=micro_data, yvar = 'SA:V', 
                           yylab = "Surface Area to Volume", show_legend = FALSE)
 sa_v_bar
 
-sa_dw_bar <- micro_barplot(data=micro_data, yvar = 'SA:DW', color2="#1B9E77", color1 = "#56B4E9", 
+sa_dw_bar <- micro_barplot(data=micro_data, yvar = 'SA:DW',  
                           yylab = "Surface Area to Dry Weight", show_legend = FALSE)
 sa_dw_bar
+
+#legend
+legend_plot <- micro_barplot(
+  data = micro_data,
+  yvar = "T",
+  yylab = "Toughness",
+  show_legend = TRUE,
+)+
+  theme(
+    legend.text  = element_text(size = 12),
+  )
+legend_only <- get_legend(legend_plot)
+bar_legend<- ggdraw(legend_only)
+bar_legend
 
 ####Univariate Trait Analysis####
 
